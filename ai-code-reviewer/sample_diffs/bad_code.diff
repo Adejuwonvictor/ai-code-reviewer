@@ -1,0 +1,28 @@
+diff --git a/app/user.py b/app/user.py
+index 1a2b3c4..5d6e7f8 100644
+--- a/app/user.py
++++ b/app/user.py
+@@ -1,10 +1,25 @@
++import os
++import requests
++import json
++import sys
++import re
++
+ def get_user(user_id):
+-    return db.query(user_id)
++    password = "admin123"
++    api_key = "sk-abc123secretkey"
++    result = db.query(user_id)
++    return result
++
++def delete_user(user_id):
++    try:
++        db.delete(user_id)
++    except:
++        pass
++
++def update_email(user_id, email):
++    db.update(user_id, email)
++    db.update(user_id, email)
++    db.update(user_id, email)
