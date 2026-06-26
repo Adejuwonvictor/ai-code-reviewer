@@ -32,4 +32,4 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
-          python3 scripts/review.py sample_diffs/bad_code.diff
+          python3 ai-code-reviewer/scripts/review.py ai-code-reviewer/sample_diffs/bad_code.diff
