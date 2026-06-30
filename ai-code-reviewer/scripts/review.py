@@ -113,12 +113,24 @@ def main():
     if len(sys.argv) < 2:
         print("\nUsage: python3 scripts/review.py <path-to-diff-file>")
         print("Example: python3 scripts/review.py sample_diffs/bad_code.diff\n")
+        print("Stdin mode: python3 scripts/review.py --stdin")
         sys.exit(1)
 
-    diff_path = sys.argv[1]
-    print(f"\nReading diff from {diff_path}")
+    if sys.argv[1] == "--stdin":
+        print("Reading diff from --stdin")
+        diff = sys.stdin.read().strip()
 
-    diff = read_file(diff_path)
+        if not diff:
+            print("\nError: No diff content received via stdin.")
+            print("This usually means no files changed or the diff was empty.\n")
+            sys.exit(1)
+
+    else:
+
+        diff_path = sys.argv[1]
+        print(f"\nReading diff from {diff_path}")
+
+        diff = read_file(diff_path)
 
     diff, was_truncated = truncate_file(diff, MAX_DIFF_LINES)
 
@@ -134,6 +146,11 @@ def main():
     print("=" * 60)
     print(review)
     print("=" * 60 + "\n")
+
+    output_path = "review_output.txt"
+    with open(output_path, "w") as f:
+        f.write(review)
+    print(f"Review saved to {output_path}")
 
 if __name__ == "__main__":
     main()
