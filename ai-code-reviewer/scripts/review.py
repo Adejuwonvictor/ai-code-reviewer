@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from pathlib import Path
 from dotenv import load_dotenv
 from groq import Groq
@@ -78,36 +79,49 @@ def truncate_file(diff:str, max_lines:int) -> tuple[str, bool]:
 
     return truncate, True
 
-def review_diff(diff:str) -> str:
-    try:
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": REVIEW_PROMPT
-                },
-                {
-                    "role": "user",
-                    "content": diff,
-                }
-            ],
-        model= MODEL,
-        temperature=0.3,
-        max_tokens=1500
-        )
+def review_diff(diff:str, max_attempt:int=2) -> str:
+    last_error = None
+    for attempt in range(1, max_attempt+1):
+        try:
+            chat_completion = client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": REVIEW_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": diff,
+                    }
+                ],
+            model= MODEL,
+            temperature=0.3,
+            max_tokens=1500
+            )
 
-        raw_content= chat_completion.choices[0].message.content or ""
-        review= raw_content.strip()
+            raw_content= chat_completion.choices[0].message.content or ""
+            review= raw_content.strip()
 
-        if not review:
-            print(f"\nWarning: Groq returned an empty response")
-            sys.exit(1)
+            if not review:
+                print(f"\nWarning: Groq returned an empty response")
+                last_error = "empty response"
+                continue
 
-        return review
+            return review
 
-    except Exception as e:
-        print(f"\nError calling Groq Api: {e}")
-        sys.exit(1)
+        except Exception as e:
+            print(f"\nWarning: {attempt}/{max_attempt} failed: {e}")
+            last_error = e
+            if attempt < max_attempt:
+                wait_time = 3 * attempt
+                print(f"Retrying in {wait_time}s")
+                time.sleep(wait_time)
+
+    print(f"\nAll {max_attempt} attempts failed. Last error: {last_error}\n")
+    return (
+        f"AI review unavailable after {max_attempt} attempts (last error: `{last_error}`).\n\n"
+        "This does not block the PR — please review the code manually."
+    )
 
 def main():
     if len(sys.argv) < 2:
